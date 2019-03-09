@@ -35,3 +35,44 @@ def sample_birth(
         )
 
     return np.random.binomial(n=1, p=p_birth_t)
+
+
+def sample_observed_count(
+    alive_t,
+    birth_t,
+    observed_count_t_minus_1,
+    was_observed_t_minus_1,
+    prior_observed_count_t_minus_1,
+    prior_was_observed_t_minus_1,
+    constant,
+):
+    """
+        Simulates the observed count.
+
+        Parameters:
+            alive_t: boolean. Was whale alive at time t?
+
+            observed_count_t_minus_1: integer. What was the observed count
+                in the year prior
+
+            was_observed_t_minus_1: prior to the calculation of
+                observed_count_t_minus_1, was the whale observed?
+
+            prior_observed_count_t_minus_1: The prior for the GLM
+
+            constant: The prior for the GLM in the case that whale was
+                not observed at all
+    """
+    if alive_t == 0:
+        return 0
+
+    p = logistic(
+        observed_count_t_minus_1 * prior_observed_count_t_minus_1 + \
+        was_observed_t_minus_1 * prior_was_observed_t_minus_1 + constant
+    )
+
+    if np.random.binomial(n=1, p=p) == 1:
+        return alive_t + birth_t
+    else:
+        return 0
+
