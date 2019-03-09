@@ -62,6 +62,10 @@ def sample_observed_count(
 
             constant: The prior for the GLM in the case that whale was
                 not observed at all
+
+        Returns: 0 (unobserved), 1 (observed, no birth), or
+            2 (observed w/ birth)
+
     """
     if alive_t == 0:
         return 0
