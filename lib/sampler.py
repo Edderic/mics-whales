@@ -51,6 +51,7 @@ def sample_observed_count(
 
         Parameters:
             alive_t: boolean. Was whale alive at time t?
+            birth_t: boolean. Did whale give birth at time t?
 
             observed_count_t_minus_1: integer. What was the observed count
                 in the year prior
