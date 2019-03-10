@@ -101,6 +101,31 @@ def since_beginning_up_to(
     row_index,
     up_to
 ):
+    """
+        Gives a row for an individual whale with columns starting from the
+        very beginning up to the specified year.
+
+        E.g. Let's assume df is the following
+                1980, 1981, 1982, 1983
+            H01   1     2     3     4
+            H02   5     6     7     8
+
+        since_beginning_up_to(df=df, row_index='H01', up_to='1982')
+        should return
+                1980, 1981, 1982,
+            H01   1     2     3
+
+        Parameters:
+            df: DataFrame indexed by whale ids (strings),
+                columns are years (strings).
+
+            row_index: string. The whale id.
+
+            up_to: string. A year in the form "XXXX" (e.g. "1982")
+
+        Returns:
+            A row
+    """
 
     row = df.loc[row_index]
     up_to_index = np.where(df.columns == up_to)[0][0] + 1
@@ -113,6 +138,21 @@ def plausible_yspb(
     df,
     up_to_year
 ):
+    """
+        Gives plausible values for Years Since Previous Birth.
+
+        Parameters:
+            row_index: String. The id of the whale, based on the
+                dataframe passed in.
+
+            age: integer. Could be positive, zero, or negative.
+
+            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
+
+            up_to_year: String. A year (e.g. '1982')
+
+        Returns: an array. Could be empty.
+    """
 
     row_values = since_beginning_up_to(
         df=df,
