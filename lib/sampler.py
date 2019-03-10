@@ -67,7 +67,22 @@ def sample_observed_count(
         Returns: 0 (unobserved), 1 (observed, no birth), or
             2 (observed w/ birth)
 
+        Notes:
+
+            Three potential cases:
+
+            | wsb t-1 | obs t-1 | equation                                 |
+            |    0    |    0    | c
+            |    1    |    1    | c + obs(t-1)*prior('obs', t-1) + \
+                                     wo(t-1)*prior('wo', t-1)              |
+            |    1    |    0    | c + wo(t-1)*prior('wo', t-1)             |
+            |    0    |    1    | doesn't happen                           |
+
+            c: constant
+            obs(t-1): observed in t-1
+            wo(t-1): was observed in t-1
     """
+
     if alive_t == 0:
         return 0
 
@@ -81,3 +96,13 @@ def sample_observed_count(
     else:
         return 0
 
+def since_beginning_up_to(
+    df,
+    row_index,
+    up_to
+):
+
+    row = df.loc[row_index]
+    up_to_index = np.where(df.columns == up_to)[0][0] + 1
+
+    return row.iloc[0:up_to_index]
