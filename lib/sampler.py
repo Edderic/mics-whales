@@ -163,6 +163,7 @@ def plausible_yspb(
     UNSPOTTED = 0
     SPOTTED_FEMALE_AND_CALF = 2
     MAX_YEARS = 50
+    REPRO_AGE = 9
 
     index_of_current_year = row_values.shape[0]
 
@@ -188,7 +189,60 @@ def plausible_yspb(
 
 
     yspbs = [index_of_current_year - x for x in collection]
-    plausible_years_since_previous_births = [x for x in yspbs if age - x > 9]
+    plausible_years_since_previous_births = \
+            [x for x in yspbs if age - x > REPRO_AGE]
 
     return plausible_years_since_previous_births
 
+def proba_alive(
+    age,
+    prior_age,
+    prior_age_constant,
+    whale_id,
+    year,
+    df
+):
+    pass
+    # before = df.loc[whale_id, ]
+    # if df.loc[]:
+    # if age < 0:
+        # return 0
+#
+    # return 1
+
+def from_start_year_up_to_final_year(
+    df,
+    start_year,
+    whale_id
+):
+
+    """
+        Gives a row for an individual whale with columns starting from
+        start_year up to the final year.
+
+        E.g. Let's assume df is the following
+                1980, 1981, 1982, 1983
+            H01   1     2     3     4
+            H02   5     6     7     8
+
+        from_start_year_up_to_final_year(df=df, whale_id='H01', start_year='1982')
+        should return
+                1982, 1983
+            H01   3     4
+
+        Parameters:
+            df: DataFrame indexed by whale ids (strings),
+                columns are years (strings).
+
+            whale_id: string. The whale id.
+
+            start_year: string. A year in the form "XXXX" (e.g. "1982")
+
+        Returns:
+            A row (pandas Series).
+    """
+
+    row = df.loc[whale_id]
+    start_index = np.where(df.columns == start_year)[0][0]
+
+    return row.iloc[start_index:]
