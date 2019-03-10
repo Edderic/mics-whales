@@ -106,3 +106,49 @@ def since_beginning_up_to(
     up_to_index = np.where(df.columns == up_to)[0][0] + 1
 
     return row.iloc[0:up_to_index]
+
+def plausible_yspb(
+    row_index,
+    age,
+    df,
+    up_to_year
+):
+
+    row_values = since_beginning_up_to(
+        df=df,
+        row_index=row_index,
+        up_to=up_to_year
+    )
+
+    UNSPOTTED = 0
+    SPOTTED_FEMALE_AND_CALF = 2
+    MAX_YEARS = 50
+
+    index_of_current_year = row_values.shape[0]
+
+    indices_of_known_give_birth = np.where(
+        row_values == SPOTTED_FEMALE_AND_CALF
+    )[0]
+
+    indices_of_maybe_give_birth = np.where(row_values == UNSPOTTED)[0]
+
+    collection = []
+
+    if len(indices_of_known_give_birth) > 0:
+        latest_known_give_birth_year = indices_of_known_give_birth.max()
+
+        for x in indices_of_maybe_give_birth:
+            if x > latest_known_give_birth_year:
+                collection.append(x)
+    else:
+        collection = list(np.arange(-MAX_YEARS,0))
+
+        for x in indices_of_maybe_give_birth:
+            collection.append(x)
+
+
+    yspbs = [index_of_current_year - x for x in collection]
+    plausible_years_since_previous_births = [x for x in yspbs if age - x > 9]
+
+    return plausible_years_since_previous_births
+
