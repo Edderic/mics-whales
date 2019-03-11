@@ -1,5 +1,7 @@
 import numpy as np
 
+NO_BIRTHS_YET = None
+
 def logistic(val):
     return 1.0 / (1.0 + np.exp(-val))
 
@@ -25,9 +27,7 @@ def sample_birth(
     if yspb_t == 1:
         return 0
 
-    not_born_yet = -1
-
-    if yspb_t == not_born_yet:
+    if yspb_t == NO_BIRTHS_YET:
         p_birth_t = logistic(
             age_t * age_t_on_birth_t__no_births + \
             unobs_t_minus_1 * unobs_t_minus_1_on_birth_t__no_births + \
@@ -178,8 +178,10 @@ def plausible_yspb(
     if len(indices_of_known_give_birth) > 0:
         latest_known_give_birth_year = indices_of_known_give_birth.max()
 
+        collection.append(latest_known_give_birth_year)
+
         for x in indices_of_maybe_give_birth:
-            if x > latest_known_give_birth_year:
+            if x > latest_known_give_birth_year + 1:
                 collection.append(x)
     else:
         collection = list(np.arange(-MAX_YEARS,0))
@@ -193,6 +195,35 @@ def plausible_yspb(
             [x for x in yspbs if age - x > REPRO_AGE]
 
     return plausible_years_since_previous_births
+
+def sample_yspb(
+    row_index,
+    age,
+    df,
+    up_to_year
+):
+    """
+        Samples plausible values for Years Since Previous Birth.
+
+        Parameters:
+            row_index: String. The id of the whale, based on the
+                dataframe passed in.
+
+            age: integer. Could be positive, zero, or negative.
+
+            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
+
+            up_to_year: String. A year (e.g. '1982')
+
+        Returns: a value. None means whale hasn't given birth yet.
+    """
+
+    potential_yspbs = plausible_yspb(
+        row_index,
+        age,
+        df,
+        up_to_year
+    )
 
 def proba_alive(
     age,
@@ -249,6 +280,45 @@ def proba_alive(
 
     return logistic(age * prior_age + prior_constant)
 
+def sample_alive(
+        age,
+        prior_age,
+        prior_constant,
+        whale_id,
+        year,
+        alive_year_before,
+        df
+):
+    """
+        Predict whether whale is alive at a certain year.
+
+        Parameters:
+            age: integer. could be negative, zero positive
+
+            prior_age: float. The coefficient for age.
+
+            prior_constant: float. The intercept term.
+
+            whale_id: String.
+
+            year: String. Ex: '1982'
+
+            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
+
+        Returns: a probability
+    """
+
+    proba = proba_alive(
+        age,
+        prior_age,
+        prior_constant,
+        whale_id,
+        year,
+        alive_year_before,
+        df
+    )
+
+    return np.random.binomial(n=1, p=proba)
 
 def from_start_year_up_to_final_year(
     df,

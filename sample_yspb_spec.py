@@ -13,6 +13,77 @@ with description('plausible_yspb') as self:
             ]
             self.rows = ['H002', 'H003']
 
+        with description('and the data for H002 is [0,1,1,0,1,0,1,2,0,0,0]'):
+            with before.each:
+                self.first_row = [0, 1, 1, 0, 1, 0, 1, 2, 0, 0, 0]
+                self.second_row = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+            with description('and the up to year was 1988'):
+                with before.each:
+                    self.up_to_year = '1988'
+                    self.dataframe = pd.DataFrame(
+                        [
+                            self.first_row,
+                            self.second_row
+                            ],
+                        columns=self.columns,
+                        index=self.rows
+                    )
+
+                with description('when age is 15'):
+                    with before.each:
+                        self.age = 15
+
+                        self.subject = plausible_yspb(
+                            row_index='H002',
+                            age=self.age,
+                            up_to_year=self.up_to_year,
+                            df=self.dataframe
+                        )
+
+                    with it('should say that H002 could have given birth 3 years ago'):
+                        assert 3 in self.subject
+
+                    with it('should NOT say that H002 could have given birth 2 years ago'):
+                        assert 2 not in self.subject
+
+                    with it('should say that H002 could have given birth 1 year ago'):
+                        assert 1 in self.subject
+
+        with description('and the data for H002 is [0,1,1,0,1,0,1,2,0,1,0]'):
+            with before.each:
+                self.first_row = [0, 1, 1, 0, 1, 0, 1, 2, 0, 1, 0]
+                self.second_row = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+            with description('and the up to year was 1988'):
+                with before.each:
+                    self.up_to_year = '1988'
+                    self.dataframe = pd.DataFrame(
+                        [
+                            self.first_row,
+                            self.second_row
+                            ],
+                        columns=self.columns,
+                        index=self.rows
+                    )
+
+                with description('when age is 15'):
+                    with before.each:
+                        self.age = 15
+
+                        self.subject = plausible_yspb(
+                            row_index='H002',
+                            age=self.age,
+                            up_to_year=self.up_to_year,
+                            df=self.dataframe
+                        )
+
+                    with it('should say that H002 could have given birth 3 years ago'):
+                        assert 3 in self.subject
+
+                    with it('should NOT say that H002 could have given birth 2 years ago'):
+                        assert 2 not in self.subject
+
         with description('and the data for H002 is [0,1,1,0,1,0,1,0,1,1,0]'):
             with before.each:
                 self.first_row = [0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0]
@@ -98,3 +169,5 @@ with description('plausible_yspb') as self:
 
                     with it('should return an empty list'):
                         assert len(self.subject) == 0
+
+
