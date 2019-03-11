@@ -9,6 +9,8 @@ with description('proba_alive') as self:
             self.prior_age = 1
             self.prior_constant = 1
 
+
+
         with description('and we are interested in row H002 and year 1985'):
             with before.each:
                 self.whale_id = 'H002'
@@ -29,17 +31,22 @@ with description('proba_alive') as self:
                     self.prior_age = 1
                     self.prior_constant = 1
 
-                    self.subject = proba_alive(
-                        age=self.age,
-                        prior_age=self.prior_age,
-                        prior_constant=self.prior_constant,
-                        whale_id=self.whale_id,
-                        year=self.year,
-                        df=self.df
-                    )
+                with description('and whale was NOT alive the year before'):
+                    with before.each:
+                        self.alive_year_before = 0
 
-                with it('should return 1.0'):
-                    assert self.subject == 1.0
+                        self.subject = proba_alive(
+                            age=self.age,
+                            prior_age=self.prior_age,
+                            prior_constant=self.prior_constant,
+                            whale_id=self.whale_id,
+                            year=self.year,
+                            alive_year_before=self.alive_year_before,
+                            df=self.df
+                        )
+
+                    with it('should return 1.0'):
+                        assert self.subject == 1.0
 
             with description('when whale was ONLY seen before AND not seen afterwards'):
                 with before.each:
@@ -56,31 +63,58 @@ with description('proba_alive') as self:
                     with before.each:
                         self.age = -1
 
-                        self.subject = proba_alive(
-                            age=self.age,
-                            prior_age=self.prior_age,
-                            prior_constant=self.prior_constant,
-                            whale_id=self.whale_id,
-                            year=self.year,
-                            df=self.df
-                        )
+                    with description('and whale was NOT alive the year before'):
+                        with before.each:
+                            self.alive_year_before = 0
 
-                    with it('should return 0.0'):
-                        assert self.subject == 0.0
+                            self.subject = proba_alive(
+                                age=self.age,
+                                prior_age=self.prior_age,
+                                prior_constant=self.prior_constant,
+                                whale_id=self.whale_id,
+                                year=self.year,
+                                alive_year_before=self.alive_year_before,
+                                df=self.df
+                            )
+
+                        with it('should return 0.0'):
+                            assert self.subject == 0.0
 
 
                 with description('when age is greater than 0'):
                     with before.each:
                         self.age = 1
 
-                        self.subject = proba_alive(
-                            age=self.age,
-                            prior_age=self.prior_age,
-                            prior_constant=self.prior_constant,
-                            whale_id=self.whale_id,
-                            year=self.year,
-                            df=self.df
-                        )
+                    with description('and whale was NOT alive the year before'):
+                        with before.each:
+                            self.alive_year_before = 0
 
-                    with it('should return xyz'):
-                        assert self.subject > 0.88 and self.subject < 0.89
+                            self.subject = proba_alive(
+                                age=self.age,
+                                prior_age=self.prior_age,
+                                prior_constant=self.prior_constant,
+                                whale_id=self.whale_id,
+                                year=self.year,
+                                alive_year_before=self.alive_year_before,
+                                df=self.df
+                            )
+
+                        with it('should return 0'):
+                            assert self.subject == 0
+
+                    with description('and whale was NOT alive the year before'):
+                        with before.each:
+                            self.alive_year_before = 1
+
+                            self.subject = proba_alive(
+                                age=self.age,
+                                prior_age=self.prior_age,
+                                prior_constant=self.prior_constant,
+                                whale_id=self.whale_id,
+                                year=self.year,
+                                alive_year_before=self.alive_year_before,
+                                df=self.df
+                            )
+
+                        with it('should return xyz'):
+                            assert self.subject > 0.88 and self.subject < 0.89

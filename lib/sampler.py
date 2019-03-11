@@ -200,6 +200,7 @@ def proba_alive(
     prior_constant,
     whale_id,
     year,
+    alive_year_before,
     df
 ):
     """
@@ -242,6 +243,8 @@ def proba_alive(
     if seen_before and seen_after:
         return 1.0
     if age < 0:
+        return 0.0
+    if not alive_year_before:
         return 0.0
 
     return logistic(age * prior_age + prior_constant)
