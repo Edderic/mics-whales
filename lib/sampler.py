@@ -197,18 +197,55 @@ def plausible_yspb(
 def proba_alive(
     age,
     prior_age,
-    prior_age_constant,
+    prior_constant,
     whale_id,
     year,
     df
 ):
-    pass
-    # before = df.loc[whale_id, ]
-    # if df.loc[]:
-    # if age < 0:
-        # return 0
-#
-    # return 1
+    """
+        Gives the probability of the whale being alive at a certain year.
+
+        Parameters:
+            age: integer. could be negative, zero positive
+
+            prior_age: float. The coefficient for age.
+
+            prior_constant: float. The intercept term.
+
+            whale_id: String.
+
+            year: String. Ex: '1982'
+
+            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
+
+        Returns: a probability
+
+        TODO: does it make sense that this function does not listen
+        to the life status of the whale the year before?
+
+    """
+    before = since_beginning_up_to(
+        df=df,
+        row_index=whale_id,
+        up_to=str(int(year) - 1)
+    )
+
+    after = from_start_year_up_to_final_year(
+        df=df,
+        start_year=str(int(year) + 1),
+        whale_id=whale_id
+    )
+
+    seen_before = before.sum() > 0
+    seen_after = after.sum() > 0
+
+    if seen_before and seen_after:
+        return 1.0
+    if age < 0:
+        return 0.0
+
+    return logistic(age * prior_age + prior_constant)
+
 
 def from_start_year_up_to_final_year(
     df,
