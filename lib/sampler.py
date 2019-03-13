@@ -1,9 +1,22 @@
+"""
+    This module contains functions for sampling.
+"""
 import numpy as np
 
 NO_BIRTHS_YET = None
 
 def logistic(val):
+    """
+        This is the sigmoid function. Takes a real number and converts
+        it into a number between 0 and 1.
+    """
     return 1.0 / (1.0 + np.exp(-val))
+
+def proba_birth(age):
+    """
+        What is the probability of giving birth?
+    """
+    return 1
 
 def sample_birth(
     repr_active_t,
@@ -227,58 +240,31 @@ def sample_yspb(
 
 def proba_alive(
     age,
-    prior_age,
-    prior_constant,
-    whale_id,
-    year,
     alive_year_before,
-    df
+    proba
 ):
     """
         Gives the probability of the whale being alive at a certain year.
 
         Parameters:
-            age: integer. could be negative, zero positive
+            age: integer. could be negative, zero, or positive
 
-            prior_age: float. The coefficient for age.
+            alive_year_before: integer. 0 for false, 1 for true.
 
-            prior_constant: float. The intercept term.
+            proba: The probability of being alive assuming whale was alive
+                the year before
 
-            whale_id: String.
-
-            year: String. Ex: '1982'
-
-            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
 
         Returns: a probability
-
-        TODO: does it make sense that this function does not listen
-        to the life status of the whale the year before?
-
     """
-    before = since_beginning_up_to(
-        df=df,
-        row_index=whale_id,
-        up_to=str(int(year) - 1)
-    )
-
-    after = from_start_year_up_to_final_year(
-        df=df,
-        start_year=str(int(year) + 1),
-        whale_id=whale_id
-    )
-
-    seen_before = before.sum() > 0
-    seen_after = after.sum() > 0
-
-    if seen_before and seen_after:
-        return 1.0
     if age < 0:
         return 0.0
-    if not alive_year_before:
+    elif age == 0:
+        return 1.0 # we assume the whale would be alive at least for the first year
+    elif alive_year_before == 0:
         return 0.0
-
-    return logistic(age * prior_age + prior_constant)
+    else:
+        return proba
 
 def sample_alive(
         age,
