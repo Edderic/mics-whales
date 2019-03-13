@@ -328,3 +328,23 @@ def from_start_year_up_to_final_year(
     start_index = np.where(df.columns == start_year)[0][0]
 
     return row.iloc[start_index:]
+
+def sample_seen_before_t(
+    seen_before_t_minus_1,
+    seen_t_minus_1
+):
+    """
+        Was the whale seen before for time t?
+
+        Parameters:
+
+            seen_before_t_minus_1: boolean. Was whale seen at time t-1 or before?
+
+            seen_t_minus_1: boolean. Was whale seen at time t-1?
+
+        Returns: boolean.
+    """
+    if seen_before_t_minus_1 == 1 or seen_t_minus_1 == 1:
+        return 1
+    else:
+        return 0
