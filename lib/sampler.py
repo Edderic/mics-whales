@@ -53,9 +53,9 @@ def sample_birth(
 def sample_observed_count(
     alive_t,
     birth_t,
-    observed_count_t_minus_1,
+    seen_t_minus_1,
     was_observed_t_minus_1,
-    prior_observed_count_t_minus_1,
+    prior_seen_t_minus_1,
     prior_was_observed_t_minus_1,
     constant,
 ):
@@ -66,13 +66,13 @@ def sample_observed_count(
             alive_t: boolean. Was whale alive at time t?
             birth_t: boolean. Did whale give birth at time t?
 
-            observed_count_t_minus_1: integer. What was the observed count
+            seen_t_minus_1: integer. What was the observed count
                 in the year prior
 
             was_observed_t_minus_1: prior to the calculation of
-                observed_count_t_minus_1, was the whale observed?
+                seen_t_minus_1, was the whale observed?
 
-            prior_observed_count_t_minus_1: The prior for the GLM
+            prior_seen_t_minus_1: The prior for the GLM
 
             constant: The prior for the GLM in the case that whale was
                 not observed at all
@@ -100,7 +100,7 @@ def sample_observed_count(
         return 0
 
     p = logistic(
-        observed_count_t_minus_1 * prior_observed_count_t_minus_1 + \
+        seen_t_minus_1 * prior_seen_t_minus_1 + \
         was_observed_t_minus_1 * prior_was_observed_t_minus_1 + constant
     )
 
@@ -254,7 +254,6 @@ def proba_alive(
             proba: The probability of being alive assuming whale was alive
                 the year before
 
-
         Returns: a probability
     """
     if age < 0:
@@ -267,41 +266,28 @@ def proba_alive(
         return proba
 
 def sample_alive(
-        age,
-        prior_age,
-        prior_constant,
-        whale_id,
-        year,
-        alive_year_before,
-        df
+    age,
+    alive_year_before,
+    proba
 ):
     """
-        Predict whether whale is alive at a certain year.
+        Simulates being alive.
 
         Parameters:
-            age: integer. could be negative, zero positive
+            age: integer. could be negative, zero, or positive
 
-            prior_age: float. The coefficient for age.
+            alive_year_before: integer. 0 for false, 1 for true.
 
-            prior_constant: float. The intercept term.
+            proba: The probability of being alive assuming whale was alive
+                the year before
 
-            whale_id: String.
-
-            year: String. Ex: '1982'
-
-            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
-
-        Returns: a probability
+        Returns: 0 (dead) or 1 (alive)
     """
 
     proba = proba_alive(
         age,
-        prior_age,
-        prior_constant,
-        whale_id,
-        year,
         alive_year_before,
-        df
+        proba
     )
 
     return np.random.binomial(n=1, p=proba)
