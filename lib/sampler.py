@@ -210,33 +210,31 @@ def plausible_yspb(
     return plausible_years_since_previous_births
 
 def sample_yspb(
-    row_index,
-    age,
-    df,
-    up_to_year
+    had_a_birth_prior_to_t_minus_1,
+    birth_t_minus_1,
+    yspb_t_minus_1
 ):
     """
         Samples plausible values for Years Since Previous Birth.
 
         Parameters:
-            row_index: String. The id of the whale, based on the
-                dataframe passed in.
+            had_a_birth_prior_to_t_minus_1: integer (0 or 1). Besides
+                birth_t_minus_1, did the whale have a birth prior to that?
 
-            age: integer. Could be positive, zero, or negative.
+            birth_t_minus_1: integer (0 or 1). Did the whale give birth last year?
 
-            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
+            yspb_t_minus_1: integer. Number of years since previous birth (1 or greater).
 
-            up_to_year: String. A year (e.g. '1982')
-
-        Returns: a value. None means whale hasn't given birth yet.
+        Returns: an integer (1 or greater). Could raise a ValueError if
+            there hasn't been any births yet at all.
     """
 
-    potential_yspbs = plausible_yspb(
-        row_index,
-        age,
-        df,
-        up_to_year
-    )
+    if had_a_birth_prior_to_t_minus_1 == 0 and birth_t_minus_1 == 0:
+        raise ValueError("sample_yspb only makes sense when there's been a birth before.")
+    if had_a_birth_prior_to_t_minus_1 == 1 and birth_t_minus_1 == 0:
+        return yspb_t_minus_1 + 1
+    if birth_t_minus_1 == 1:
+        return 1
 
 def proba_alive(
     age,

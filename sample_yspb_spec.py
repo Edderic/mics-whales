@@ -1,173 +1,53 @@
-from mamba import description, context, it
-from expects import expect, equal
-from lib.sampler import plausible_yspb
-import pandas as pd
+""" this tests sample_yspb """
 
+from mamba import description, context, it, before
+from lib.sampler import sample_yspb
 
-with description('plausible_yspb') as self:
-    with description('when df has years as columns and indexed by whale id'):
+with description('sample_yspb') as self:
+    with context('when the whale has not had any births yet in previous years at all'):
         with before.each:
-            self.columns = [
-                '1979', '1980', '1981', '1982', '1983', '1984',
-                '1985', '1986', '1987', '1988', '1989'
-            ]
-            self.rows = ['H002', 'H003']
+            self.args = {}
+            self.args['had_a_birth_prior_to_t_minus_1'] = 0
+            self.args['birth_t_minus_1'] = 0
+            self.args['yspb_t_minus_1'] = 8 # this value is discarded
 
-        with description('and the data for H002 is [0,1,1,0,1,0,1,2,0,0,0]'):
+        with it('should raise an error'):
+            try:
+                sample_yspb(**self.args)
+                assert False
+            except ValueError as err:
+                self.message = "sample_yspb only makes sense when there's been a birth before."
+                assert err.args[0] == self.message
+
+    with context('when the whale gave birth for the first time last year'):
+        with before.each:
+            self.args = {}
+            self.args['had_a_birth_prior_to_t_minus_1'] = 0
+            self.args['birth_t_minus_1'] = 1
+            self.args['yspb_t_minus_1'] = 8 # this value is discarded
+
+        with it('should return 1'):
+            self.subject = sample_yspb(**self.args)
+            assert self.subject == 1
+
+    with context('when the whale had given birth previously before last year'):
+        with before.each:
+            self.args = {}
+            self.args['had_a_birth_prior_to_t_minus_1'] = 1
+            self.args['yspb_t_minus_1'] = 8 # this value is used
+
+        with context('and no birth last year'):
             with before.each:
-                self.first_row = [0, 1, 1, 0, 1, 0, 1, 2, 0, 0, 0]
-                self.second_row = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                self.args['birth_t_minus_1'] = 0
 
-            with description('and the up to year was 1988'):
-                with before.each:
-                    self.up_to_year = '1988'
-                    self.dataframe = pd.DataFrame(
-                        [
-                            self.first_row,
-                            self.second_row
-                            ],
-                        columns=self.columns,
-                        index=self.rows
-                    )
+            with it('should increment yspb_t_minus_1'):
+                self.subject = sample_yspb(**self.args)
+                assert self.subject == (self.args['yspb_t_minus_1'] + 1)
 
-                with description('when age is 15'):
-                    with before.each:
-                        self.age = 15
-
-                        self.subject = plausible_yspb(
-                            row_index='H002',
-                            age=self.age,
-                            up_to_year=self.up_to_year,
-                            df=self.dataframe
-                        )
-
-                    with it('should say that H002 could have given birth 3 years ago'):
-                        assert 3 in self.subject
-
-                    with it('should NOT say that H002 could have given birth 2 years ago'):
-                        assert 2 not in self.subject
-
-                    with it('should say that H002 could have given birth 1 year ago'):
-                        assert 1 in self.subject
-
-        with description('and the data for H002 is [0,1,1,0,1,0,1,2,0,1,0]'):
+        with context('and a birth last year'):
             with before.each:
-                self.first_row = [0, 1, 1, 0, 1, 0, 1, 2, 0, 1, 0]
-                self.second_row = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                self.args['birth_t_minus_1'] = 1
 
-            with description('and the up to year was 1988'):
-                with before.each:
-                    self.up_to_year = '1988'
-                    self.dataframe = pd.DataFrame(
-                        [
-                            self.first_row,
-                            self.second_row
-                            ],
-                        columns=self.columns,
-                        index=self.rows
-                    )
-
-                with description('when age is 15'):
-                    with before.each:
-                        self.age = 15
-
-                        self.subject = plausible_yspb(
-                            row_index='H002',
-                            age=self.age,
-                            up_to_year=self.up_to_year,
-                            df=self.dataframe
-                        )
-
-                    with it('should say that H002 could have given birth 3 years ago'):
-                        assert 3 in self.subject
-
-                    with it('should NOT say that H002 could have given birth 2 years ago'):
-                        assert 2 not in self.subject
-
-        with description('and the data for H002 is [0,1,1,0,1,0,1,0,1,1,0]'):
-            with before.each:
-                self.first_row = [0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0]
-                self.second_row = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-            with description('and the up to year was 1988'):
-                with before.each:
-                    self.up_to_year = '1988'
-                    self.dataframe = pd.DataFrame(
-                        [
-                            self.first_row,
-                            self.second_row
-                            ],
-                        columns=self.columns,
-                        index=self.rows
-                    )
-
-                with description('when age is 15'):
-                    with before.each:
-                        self.age = 15
-
-                        self.subject = plausible_yspb(
-                            row_index='H002',
-                            age=self.age,
-                            up_to_year=self.up_to_year,
-                            df=self.dataframe
-                        )
-
-                    with it('should say that H002 could have given birth 3 years ago'):
-                        assert 3 in self.subject
-
-                    with it('should say that H002 could have given birth 5 years ago'):
-                        assert 5 in self.subject
-
-                    with it('should say that H002 could NOT have given birth 7 years ago'):
-                        assert 7 not in self.subject
-
-                    with it('should say that H002 could NOT have given birth 10 years ago'):
-                        assert 10 not in self.subject
-
-                    with it('should only have 2 potential answers'):
-                        assert len(self.subject) == 2
-
-                with description('when age is 21'):
-                    with before.each:
-                        self.age = 21
-
-                        self.subject = plausible_yspb(
-                            row_index='H002',
-                            age=self.age,
-                            up_to_year=self.up_to_year,
-                            df=self.dataframe
-                        )
-
-                    with it('should say that H002 could have given birth 3 years ago'):
-                        assert 3 in self.subject
-
-                    with it('should say that H002 could have given birth 5 years ago'):
-                        assert 5 in self.subject
-
-                    with it('should say that H002 could have given birth 7 years ago'):
-                        assert 7 in self.subject
-
-                    with it('should say that H002 could have given birth 10 years ago'):
-                        assert 10 in self.subject
-
-                    with it('should say that H002 could have given birth 11 years ago'):
-                        assert 11 in self.subject
-
-                    with it('should only have 5 possible answers'):
-                        assert len(self.subject) == 5
-
-                with description('when age is 8'):
-                    with before.each:
-                        self.age = 8
-
-                        self.subject = plausible_yspb(
-                            row_index='H002',
-                            age=self.age,
-                            up_to_year=self.up_to_year,
-                            df=self.dataframe
-                        )
-
-                    with it('should return an empty list'):
-                        assert len(self.subject) == 0
-
-
+            with it('should return 1'):
+                self.subject = sample_yspb(**self.args)
+                assert self.subject == 1
