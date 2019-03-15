@@ -42,7 +42,51 @@ class HadNoBirthsYet:
         summation = self.age * self.prior_age + self.prior_constant
         return logistic(summation)
 
+class HadBirthsBefore:
+    """
+        Class that calculates the probability of giving birth,
+        specifically for whales that had given birth yet
 
+        parameters:
+            age: integer. The age of the whale.
+            repr_active: 0 or 1. Is whale reproductively active?
+            alive: 0 or 1. Is whale alive?
+            prior_constant: constant term in the logistic regression.
+            prior_age: coefficient for age in the logistic regression.
+    """
+    def __init__(
+            self,
+            age,
+            repr_active,
+            alive,
+            prior_constant,
+            prior_age,
+            yspb,
+            prior_yspb,
+            prior_yspb_squared
+    ):
+        self.age = age
+        self.repr_active = repr_active
+        self.alive = alive
+        self.prior_constant = prior_constant
+        self.prior_age = prior_age
+        self.yspb = yspb
+        self.prior_yspb = prior_yspb
+        self.prior_yspb_squared = prior_yspb_squared
+
+
+    def proba_give_birth(self):
+        """
+            Returns a probability of giving birth, between 0 and 1.
+        """
+        if self.alive == 0 or self.repr_active == 0:
+            return 0
+
+        summation = self.age * self.prior_age + \
+                self.prior_constant + self.yspb * self.prior_yspb + \
+                self.yspb ** 2 * self.prior_yspb_squared
+
+        return logistic(summation)
 
 def logistic(val):
     """
