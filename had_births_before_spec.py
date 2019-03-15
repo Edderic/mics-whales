@@ -17,15 +17,16 @@ with description('HadBirthsBefore') as self:
         ]
 
     with description('#proba_give_birth'):
-        with context('and everything is set to 1'):
+        with context('and everything is set to 1 except yspb'):
             with before.each:
                 set_to_value_except(
                     args=self.args,
                     keys_to_set_to=self.arguments,
                     value=1,
-                    _except=[]
+                    _except=['yspb']
                 )
 
+                self.args['yspb'] = 2
 
             with context('but whale is NOT reproductively active'):
                 with before.each:
@@ -41,4 +42,17 @@ with description('HadBirthsBefore') as self:
                     self.subject = HadBirthsBefore(**self.args).proba_give_birth()
 
                 with it('should return the weighted sums run through logistic function'):
-                    assert self.subject > 0.98 and self.subject < 0.99
+                    assert self.subject > 0.99
+
+        with context('when whale gave birth last year'):
+            with before.each:
+                set_to_value_except(
+                    args=self.args,
+                    keys_to_set_to=self.arguments,
+                    value=1,
+                    _except=[]
+                )
+                self.subject = HadBirthsBefore(**self.args).proba_give_birth()
+
+            with it('should return 0'):
+                assert self.subject == 0
