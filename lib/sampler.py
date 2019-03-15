@@ -36,7 +36,7 @@ class HadNoBirthsYet:
         """
             Returns a probability of giving birth, between 0 and 1.
         """
-        if self.alive == 0:
+        if self.alive == 0 or self.repr_active == 0:
             return 0
 
         summation = self.age * self.prior_age + self.prior_constant

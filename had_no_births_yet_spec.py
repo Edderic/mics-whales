@@ -37,3 +37,15 @@ with description('HadNoBirthsYet') as self:
 
                 with it('should return 0'):
                     assert self.subject == 0
+
+            with context('and whale is alive'):
+                with before.each:
+                    self.args['alive'] = 1
+
+                with context('but whale is not yet reproductively active'):
+                    with before.each:
+                        self.args['repr_active'] = 0
+                        self.subject = HadNoBirthsYet(**self.args).proba_give_birth()
+
+                    with it('should return 0'):
+                        assert self.subject == 0
