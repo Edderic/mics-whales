@@ -18,12 +18,12 @@ class HadNoBirthsYet:
             prior_age: coefficient for age in the logistic regression.
     """
     def __init__(
-        self,
-        age,
-        repr_active,
-        alive,
-        prior_constant,
-        prior_age
+            self,
+            age,
+            repr_active,
+            alive,
+            prior_constant,
+            prior_age
     ):
         self.age = age
         self.repr_active = repr_active
@@ -97,12 +97,11 @@ def logistic(val):
     return 1.0 / (1.0 + np.exp(-val))
 
 def proba_birth(
-    age,
-    repr_active,
-    alive,
-    has_given_birth,
-    yspb,
-
+        age,
+        repr_active,
+        alive,
+        has_given_birth,
+        yspb,
 ):
     """
         What is the probability of giving birth?
@@ -110,19 +109,19 @@ def proba_birth(
     return 0
 
 def sample_birth(
-    repr_active_t,
-    alive_t,
-    unobs_t_minus_1,
-    unobs_t_minus_1_on_birth_t,
-    unobs_t_minus_1_on_birth_t__no_births,
-    age_t,
-    age_t_on_birth_t,
-    age_t_on_birth_t__no_births,
-    constant_on_birth_t,
-    constant_on_birth_t__no_births,
-    yspb_t,
-    yspb_t_on_birth_t,
-    yspb_t_squared_on_birth_t,
+        repr_active_t,
+        alive_t,
+        unobs_t_minus_1,
+        unobs_t_minus_1_on_birth_t,
+        unobs_t_minus_1_on_birth_t__no_births,
+        age_t,
+        age_t_on_birth_t,
+        age_t_on_birth_t__no_births,
+        constant_on_birth_t,
+        constant_on_birth_t__no_births,
+        yspb_t,
+        yspb_t_on_birth_t,
+        yspb_t_squared_on_birth_t,
 ):
     if alive_t == 0:
         return 0
@@ -142,13 +141,13 @@ def sample_birth(
 
 
 def sample_observed_count(
-    alive_t,
-    birth_t,
-    seen_t_minus_1,
-    was_observed_t_minus_1,
-    prior_seen_t_minus_1,
-    prior_was_observed_t_minus_1,
-    constant,
+        alive_t,
+        birth_t,
+        seen_t_minus_1,
+        was_observed_t_minus_1,
+        prior_seen_t_minus_1,
+        prior_was_observed_t_minus_1,
+        constant,
 ):
     """
         Simulates the observed count.
@@ -190,84 +189,20 @@ def sample_observed_count(
     if alive_t == 0:
         return 0
 
-    p = logistic(
+    proba = logistic(
         seen_t_minus_1 * prior_seen_t_minus_1 + \
         was_observed_t_minus_1 * prior_was_observed_t_minus_1 + constant
     )
 
-    if np.random.binomial(n=1, p=p) == 1:
+    if np.random.binomial(n=1, p=proba) == 1:
         return alive_t + birth_t
     else:
         return 0
 
-def plausible_yspb(
-    row_index,
-    age,
-    df,
-    up_to_year
-):
-    """
-        Gives plausible values for Years Since Previous Birth.
-
-        Parameters:
-            row_index: String. The id of the whale, based on the
-                dataframe passed in.
-
-            age: integer. Could be positive, zero, or negative.
-
-            df: DataFrame. Index are whale ids. Columns are years (e.g. '1980')
-
-            up_to_year: String. A year (e.g. '1982')
-
-        Returns: an array. Could be empty.
-    """
-
-    row_values = since_beginning_up_to(
-        df=df,
-        row_index=row_index,
-        up_to=up_to_year
-    )
-
-    UNSPOTTED = 0
-    SPOTTED_FEMALE_AND_CALF = 2
-    MAX_YEARS = 50
-    REPRO_AGE = 9
-
-    index_of_current_year = row_values.shape[0]
-
-    indices_of_known_give_birth = np.where(
-        row_values == SPOTTED_FEMALE_AND_CALF
-    )[0]
-
-    indices_of_maybe_give_birth = np.where(row_values == UNSPOTTED)[0]
-
-    collection = []
-
-    if len(indices_of_known_give_birth) > 0:
-        latest_known_give_birth_year = indices_of_known_give_birth.max()
-
-        collection.append(latest_known_give_birth_year)
-
-        for x in indices_of_maybe_give_birth:
-            if x > latest_known_give_birth_year + 1:
-                collection.append(x)
-    else:
-        collection = list(np.arange(-MAX_YEARS,0))
-
-        for x in indices_of_maybe_give_birth:
-            collection.append(x)
-
-
-    yspbs = [index_of_current_year - x for x in collection]
-    plausible_years_since_previous_births = \
-            [x for x in yspbs if age - x > REPRO_AGE]
-
-    return plausible_years_since_previous_births
-
 def sample_yspb(
-    had_a_birth_prior_to_t_minus_1,
-    birth_t_minus_1,
-    yspb_t_minus_1
+        had_a_birth_prior_to_t_minus_1,
+        birth_t_minus_1,
+        yspb_t_minus_1
 ):
     """
         Samples plausible values for Years Since Previous Birth.
@@ -292,9 +227,9 @@ def sample_yspb(
         return 1
 
 def proba_alive(
-    age,
-    alive_year_before,
-    proba
+        age,
+        alive_year_before,
+        proba
 ):
     """
         Gives the probability of the whale being alive at a certain year.
@@ -319,9 +254,9 @@ def proba_alive(
         return proba
 
 def sample_alive(
-    age,
-    alive_year_before,
-    proba
+        age,
+        alive_year_before,
+        proba
 ):
     """
         Simulates being alive.
@@ -347,8 +282,8 @@ def sample_alive(
 
 
 def sample_seen_before_t(
-    seen_before_t_minus_1,
-    seen_t_minus_1
+        seen_before_t_minus_1,
+        seen_t_minus_1
 ):
     """
         Was the whale seen before for time t?
