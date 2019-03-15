@@ -11,9 +11,9 @@ with description('sample_observed_count') as self:
         self.args['alive_t'] = 0
         self.args['birth_t'] = 0
         self.args['seen_t_minus_1'] = 0
-        self.args['was_observed_t_minus_1'] = 0
+        self.args['seen_before_t_minus_1'] = 0
         self.args['prior_seen_t_minus_1'] = 0
-        self.args['prior_was_observed_t_minus_1'] = 0
+        self.args['prior_seen_before_t_minus_1'] = 0
         self.args['constant'] = 0
 
     with context('when whale is not alive'):
@@ -31,7 +31,7 @@ with description('sample_observed_count') as self:
 
         with context('when whale was not observed'):
             with before.each:
-                self.args['was_observed_t_minus_1'] = 0
+                self.args['seen_before_t_minus_1'] = 0
 
             with context('and whale did not show up last time'):
                 with before.each:
@@ -47,11 +47,11 @@ with description('sample_observed_count') as self:
 
         with context('when whale was observed'):
             with before.each:
-                self.args['was_observed_t_minus_1'] = 1
+                self.args['seen_before_t_minus_1'] = 1
 
             with context('and the coefficient for that var is strong'):
                 with before.each:
-                    self.args['prior_was_observed_t_minus_1'] = 100
+                    self.args['prior_seen_before_t_minus_1'] = 100
 
                 with context('and whale did not show up last time'):
                     with before.each:

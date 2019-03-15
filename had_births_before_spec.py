@@ -9,7 +9,6 @@ with description('HadBirthsBefore') as self:
         self.arguments = [
             'age',
             'repr_active',
-            'alive',
             'prior_constant',
             'prior_age',
             'yspb',
@@ -27,29 +26,17 @@ with description('HadBirthsBefore') as self:
                     _except=[]
                 )
 
-            with context('but whale is not alive'):
+
+            with context('but whale is NOT reproductively active'):
                 with before.each:
-                    self.args['alive'] = 0
+                    self.args['repr_active'] = 0
                     self.subject = HadBirthsBefore(**self.args).proba_give_birth()
 
                 with it('should return 0'):
                     assert self.subject == 0
 
-            with context('when whale is alive'):
+            with context('and whale reproductively active'):
                 with before.each:
-                    self.args['alive'] = 1
-
-                with context('but whale is NOT reproductively active'):
-                    with before.each:
-                        self.args['repr_active'] = 0
-                        self.subject = HadBirthsBefore(**self.args).proba_give_birth()
-
-                    with it('should return 0'):
-                        assert self.subject == 0
-
-            with context('and whale is alive and reproductively active'):
-                with before.each:
-                    self.args['alive'] = 1
                     self.args['repr_active'] = 1
                     self.subject = HadBirthsBefore(**self.args).proba_give_birth()
 

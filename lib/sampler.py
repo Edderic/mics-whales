@@ -3,6 +3,127 @@
 """
 import numpy as np
 
+def model(parameters):
+    """
+        Produces data for an individual.
+
+        parameters: a dictionary
+            num_years: positive integer. Number of years to produce data for
+
+            start_age: integer (pos/zero/neg). The age of the whale in the beginning.
+
+            start_alive: Was whale alive in the beginning?
+
+            start_had_a_birth_before: Did the whale have a birth before the
+                time window of interest?
+
+            had_no_births_yet_prior_constant: constant term in the logistic
+                regression for proba_give_birth.
+
+            had_no_births_yet_prior_age: coefficient for age in the logistic
+                regression for proba_give_birth.
+
+            had_births_before_prior_constant: intercept term for logistic
+                regression for HadBirthsBefore#proba_give_birth
+
+            had_births_before_prior_age: age coefficient for logistic
+                regression for HadBirthsBefore#proba_give_birth
+
+            had_births_before_yspb: years since previous birth.
+
+            had_births_before_prior_yspb: coefficient for yspb in the logistic
+                regression for proba_give_birth.
+
+            had_births_before_prior_yspb_squared: coefficient for yspb**2 in the
+                logistic regression for proba_give_birth.
+
+            alive_proba: If whale was alive the year before, what's the probability
+                of being alive now?
+
+            observed_count_prior_seen_t_minus_1: The prior for the GLM
+
+            observed_count_prior_seen_before_t_minus_1: The prior for the GLM in the case that
+                whale was not observed at all
+
+            observed_count_prior_constant: The prior for the GLM in the case that
+                whale was not observed at all
+
+    """
+
+    alive = np.zeros(parameters['num_years'])
+    alive[0] = parameters['alive_year_before']
+
+    had_a_birth_before = np.zeros(parameters['num_years'])
+    had_a_birth_before[0] = parameters['start_had_a_birth_before']
+
+    yspb = np.zeros(parameters['yspb'])
+    yspb[0] = parameters['had_births_before_yspb']
+
+    observed_count = np.zeros(parameters['num_years'])
+
+    for i in range(1, parameters['num_years']):
+        age = parameters['start_age'] + i
+
+        alive[i] = sample_alive(
+            age=age,
+            alive_year_before=alive[i-1],
+            proba=parameters['alive_proba']
+        )
+
+        repr_active = sample_repr_active(age=age, alive=alive[i])
+
+        birth_proba_generator = None
+
+        if had_a_birth_before[i-1] == 1:
+            birth_proba_generator = HadBirthsBefore(
+                age=age,
+                repr_active=repr_active,
+                prior_constant=parameters['had_births_before_prior_yspb'],
+                prior_age=parameters['had_births_before_prior_age'],
+                yspb=parameters['had_births_before_yspb'],
+                prior_yspb=parameters['had_births_before_prior_yspb'],
+                prior_yspb_squared=parameters['had_births_before_prior_yspb_squared']
+            )
+        else:
+            birth_proba_generator = HadNoBirthsYet(
+                age=age,
+                repr_active=repr_active,
+                prior_constant=parameters['had_no_births_yet_prior_constant'],
+                prior_age=parameters['had_no_births_yet_prior_age'],
+            )
+
+        proba_give_birth = birth_proba_generator.proba_give_birth()
+        birth = np.random.binomial(n=1, p=proba_give_birth)
+
+        had_a_birth_before[i] = birth or had_a_birth_before[i-1]
+
+        observed_count[i] = sample_observed_count(
+            alive_t=alive[i],
+            birth_t=birth,
+            seen_t_minus_1=int(observed_count[i-1] > 0),
+            seen_before_t_minus_1=int(observed_count[:i].sum() > 0),
+            prior_seen_t_minus_1=parameters['observed_count_prior_seen_t_minus_1'],
+            prior_seen_before_t_minus_1=parameters['observed_count_prior_seen_before_t_minus_1'],
+            constant=parameters['observed_count_prior_constant']
+        )
+
+    return observed_count
+
+
+def sample_repr_active(age, alive):
+    """
+        Samples reproductively activeness
+
+        parameters:
+            age: integer
+
+        returns 1 or 0
+    """
+    if age > 9 and alive:
+        return 1
+    else:
+        return 0
+
 class HadNoBirthsYet:
     """
         Class that calculates the probability of giving birth,
@@ -10,22 +131,22 @@ class HadNoBirthsYet:
 
         parameters:
             age: integer. The age of the whale.
+
             repr_active: 0 or 1. Is whale reproductively active?
-            alive: 0 or 1. Is whale alive?
+
             prior_constant: constant term in the logistic regression.
+
             prior_age: coefficient for age in the logistic regression.
     """
     def __init__(
             self,
             age,
             repr_active,
-            alive,
             prior_constant,
             prior_age
     ):
         self.age = age
         self.repr_active = repr_active
-        self.alive = alive
         self.prior_constant = prior_constant
         self.prior_age = prior_age
 
@@ -34,7 +155,7 @@ class HadNoBirthsYet:
         """
             Returns a probability of giving birth, between 0 and 1.
         """
-        if self.alive == 0 or self.repr_active == 0:
+        if self.repr_active == 0:
             return 0
 
         summation = self.age * self.prior_age + self.prior_constant
@@ -47,16 +168,24 @@ class HadBirthsBefore:
 
         parameters:
             age: integer. The age of the whale.
+
             repr_active: 0 or 1. Is whale reproductively active?
-            alive: 0 or 1. Is whale alive?
-            prior_constant: constant term in the logistic regression.
-            prior_age: coefficient for age in the logistic regression.
+
+            prior_constant: constant term in the logistic regression for proba_give_birth.
+
+            prior_age: coefficient for age in the logistic regression for proba_give_birth.
+
+            yspb: years since previous birth.
+
+            prior_yspb: coefficient for yspb in the logistic regression for proba_give_birth.
+
+            prior_yspb_squared: coefficient for yspb**2 in the logistic regression for proba_give_birth.
+
     """
     def __init__(
             self,
             age,
             repr_active,
-            alive,
             prior_constant,
             prior_age,
             yspb,
@@ -65,7 +194,6 @@ class HadBirthsBefore:
     ):
         self.age = age
         self.repr_active = repr_active
-        self.alive = alive
         self.prior_constant = prior_constant
         self.prior_age = prior_age
         self.yspb = yspb
@@ -77,7 +205,7 @@ class HadBirthsBefore:
         """
             Returns a probability of giving birth, between 0 and 1.
         """
-        if self.alive == 0 or self.repr_active == 0:
+        if self.repr_active == 0:
             return 0
 
         summation = self.age * self.prior_age + \
@@ -98,9 +226,9 @@ def sample_observed_count(
         alive_t,
         birth_t,
         seen_t_minus_1,
-        was_observed_t_minus_1,
+        seen_before_t_minus_1,
         prior_seen_t_minus_1,
-        prior_was_observed_t_minus_1,
+        prior_seen_before_t_minus_1,
         constant,
 ):
     """
@@ -113,7 +241,7 @@ def sample_observed_count(
             seen_t_minus_1: integer. What was the observed count
                 in the year prior
 
-            was_observed_t_minus_1: prior to the calculation of
+            seen_before_t_minus_1: prior to the calculation of
                 seen_t_minus_1, was the whale observed?
 
             prior_seen_t_minus_1: The prior for the GLM
@@ -145,7 +273,7 @@ def sample_observed_count(
 
     proba = logistic(
         seen_t_minus_1 * prior_seen_t_minus_1 + \
-        was_observed_t_minus_1 * prior_was_observed_t_minus_1 + constant
+        seen_before_t_minus_1 * prior_seen_before_t_minus_1 + constant
     )
 
     if np.random.binomial(n=1, p=proba) == 1:
