@@ -5,18 +5,65 @@ import numpy as np
 
 NO_BIRTHS_YET = None
 
+class HadNoBirthsYet:
+    """
+        Class that calculates the probability of giving birth,
+        specifically for whales that hadn't given birth yet
+
+        parameters:
+            age: integer. The age of the whale.
+            repr_active: 0 or 1. Is whale reproductively active?
+            alive: 0 or 1. Is whale alive?
+            prior_constant: constant term in the logistic regression.
+            prior_age: coefficient for age in the logistic regression.
+    """
+    def __init__(
+        self,
+        age,
+        repr_active,
+        alive,
+        prior_constant,
+        prior_age
+    ):
+        self.age = age
+        self.repr_active = repr_active
+        self.alive = alive
+        self.prior_constant = prior_constant
+        self.prior_age = prior_age
+
+
+    def proba_give_birth(self):
+        """
+            Returns a probability of giving birth, between 0 and 1.
+        """
+        if self.alive == 0:
+            return 0
+
+        summation = self.age * self.prior_age + self.prior_constant
+        return logistic(summation)
+
+
+
 def logistic(val):
     """
         This is the sigmoid function. Takes a real number and converts
         it into a number between 0 and 1.
     """
+
     return 1.0 / (1.0 + np.exp(-val))
 
-def proba_birth(age):
+def proba_birth(
+    age,
+    repr_active,
+    alive,
+    has_given_birth,
+    yspb,
+
+):
     """
         What is the probability of giving birth?
     """
-    return 1
+    return 0
 
 def sample_birth(
     repr_active_t,
