@@ -17,6 +17,8 @@ def model(parameters):
             start_had_a_birth_before: Did the whale have a birth before the
                 time window of interest?
 
+            start_yspb: years since previous birth.
+
             had_no_births_yet_prior_constant: constant term in the logistic
                 regression for proba_give_birth.
 
@@ -28,8 +30,6 @@ def model(parameters):
 
             had_births_before_prior_age: age coefficient for logistic
                 regression for HadBirthsBefore#proba_give_birth
-
-            had_births_before_yspb: years since previous birth.
 
             had_births_before_prior_yspb: coefficient for yspb in the logistic
                 regression for proba_give_birth.
@@ -51,13 +51,15 @@ def model(parameters):
     """
 
     alive = np.zeros(parameters['num_years'])
-    alive[0] = parameters['alive_year_before']
+    alive[0] = parameters['start_alive']
 
     had_a_birth_before = np.zeros(parameters['num_years'])
     had_a_birth_before[0] = parameters['start_had_a_birth_before']
 
-    yspb = np.zeros(parameters['yspb'])
-    yspb[0] = parameters['had_births_before_yspb']
+    births = np.zeros(parameters['num_years'])
+
+    yspb = np.zeros(parameters['num_years'])
+    yspb[0] = parameters['start_yspb']
 
     observed_count = np.zeros(parameters['num_years'])
 
@@ -75,12 +77,19 @@ def model(parameters):
         birth_proba_generator = None
 
         if had_a_birth_before[i-1] == 1:
+            # TODO: check validity
+            yspb[i] = sample_yspb(
+                had_a_birth_prior_to_t_minus_1=int(had_a_birth_before[:i].sum() > 0),
+                birth_t_minus_1=births[i-1],
+                yspb_t_minus_1=yspb[i-1]
+            )
+
             birth_proba_generator = HadBirthsBefore(
                 age=age,
                 repr_active=repr_active,
                 prior_constant=parameters['had_births_before_prior_yspb'],
                 prior_age=parameters['had_births_before_prior_age'],
-                yspb=parameters['had_births_before_yspb'],
+                yspb=yspb[i],
                 prior_yspb=parameters['had_births_before_prior_yspb'],
                 prior_yspb_squared=parameters['had_births_before_prior_yspb_squared']
             )
@@ -93,13 +102,13 @@ def model(parameters):
             )
 
         proba_give_birth = birth_proba_generator.proba_give_birth()
-        birth = np.random.binomial(n=1, p=proba_give_birth)
+        births[i] = np.random.binomial(n=1, p=proba_give_birth)
 
-        had_a_birth_before[i] = birth or had_a_birth_before[i-1]
+        had_a_birth_before[i] = births[i] or had_a_birth_before[i-1]
 
         observed_count[i] = sample_observed_count(
             alive_t=alive[i],
-            birth_t=birth,
+            birth_t=births[i],
             seen_t_minus_1=int(observed_count[i-1] > 0),
             seen_before_t_minus_1=int(observed_count[:i].sum() > 0),
             prior_seen_t_minus_1=parameters['observed_count_prior_seen_t_minus_1'],
