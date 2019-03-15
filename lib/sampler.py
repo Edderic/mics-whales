@@ -109,42 +109,6 @@ def sample_observed_count(
     else:
         return 0
 
-def since_beginning_up_to(
-    df,
-    row_index,
-    up_to
-):
-    """
-        Gives a row for an individual whale with columns starting from the
-        very beginning up to the specified year.
-
-        E.g. Let's assume df is the following
-                1980, 1981, 1982, 1983
-            H01   1     2     3     4
-            H02   5     6     7     8
-
-        since_beginning_up_to(df=df, row_index='H01', up_to='1982')
-        should return
-                1980, 1981, 1982,
-            H01   1     2     3
-
-        Parameters:
-            df: DataFrame indexed by whale ids (strings),
-                columns are years (strings).
-
-            row_index: string. The whale id.
-
-            up_to: string. A year in the form "XXXX" (e.g. "1982")
-
-        Returns:
-            A row
-    """
-
-    row = df.loc[row_index]
-    up_to_index = np.where(df.columns == up_to)[0][0] + 1
-
-    return row.iloc[0:up_to_index]
-
 def plausible_yspb(
     row_index,
     age,
@@ -290,42 +254,6 @@ def sample_alive(
 
     return np.random.binomial(n=1, p=proba)
 
-def from_start_year_up_to_final_year(
-    df,
-    start_year,
-    whale_id
-):
-
-    """
-        Gives a row for an individual whale with columns starting from
-        start_year up to the final year.
-
-        E.g. Let's assume df is the following
-                1980, 1981, 1982, 1983
-            H01   1     2     3     4
-            H02   5     6     7     8
-
-        from_start_year_up_to_final_year(df=df, whale_id='H01', start_year='1982')
-        should return
-                1982, 1983
-            H01   3     4
-
-        Parameters:
-            df: DataFrame indexed by whale ids (strings),
-                columns are years (strings).
-
-            whale_id: string. The whale id.
-
-            start_year: string. A year in the form "XXXX" (e.g. "1982")
-
-        Returns:
-            A row (pandas Series).
-    """
-
-    row = df.loc[whale_id]
-    start_index = np.where(df.columns == start_year)[0][0]
-
-    return row.iloc[start_index:]
 
 def sample_seen_before_t(
     seen_before_t_minus_1,
