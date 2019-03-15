@@ -3,8 +3,6 @@
 """
 import numpy as np
 
-NO_BIRTHS_YET = None
-
 class HadNoBirthsYet:
     """
         Class that calculates the probability of giving birth,
@@ -95,50 +93,6 @@ def logistic(val):
     """
 
     return 1.0 / (1.0 + np.exp(-val))
-
-def proba_birth(
-        age,
-        repr_active,
-        alive,
-        has_given_birth,
-        yspb,
-):
-    """
-        What is the probability of giving birth?
-    """
-    return 0
-
-def sample_birth(
-        repr_active_t,
-        alive_t,
-        unobs_t_minus_1,
-        unobs_t_minus_1_on_birth_t,
-        unobs_t_minus_1_on_birth_t__no_births,
-        age_t,
-        age_t_on_birth_t,
-        age_t_on_birth_t__no_births,
-        constant_on_birth_t,
-        constant_on_birth_t__no_births,
-        yspb_t,
-        yspb_t_on_birth_t,
-        yspb_t_squared_on_birth_t,
-):
-    if alive_t == 0:
-        return 0
-    if repr_active_t == 0:
-        return 0
-    if yspb_t == 1:
-        return 0
-
-    if yspb_t == NO_BIRTHS_YET:
-        p_birth_t = logistic(
-            age_t * age_t_on_birth_t__no_births + \
-            unobs_t_minus_1 * unobs_t_minus_1_on_birth_t__no_births + \
-            constant_on_birth_t__no_births
-        )
-
-    return np.random.binomial(n=1, p=p_birth_t)
-
 
 def sample_observed_count(
         alive_t,
