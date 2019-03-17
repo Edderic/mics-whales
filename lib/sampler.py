@@ -2,6 +2,7 @@
     This module contains functions for sampling.
 """
 import numpy as np
+import pandas as pd
 
 def model(parameters):
     """
@@ -48,7 +49,12 @@ def model(parameters):
             observed_count_prior_constant: The prior for the GLM in the case that
                 whale was not observed at all
 
+        returns: a dictionary with 'data' attribute
+
+
     """
+    ages = np.zeros(parameters['num_years'])
+    ages[0] = parameters['start_age']
 
     alive = np.zeros(parameters['num_years'])
     alive[0] = parameters['start_alive']
@@ -63,16 +69,20 @@ def model(parameters):
 
     observed_count = np.zeros(parameters['num_years'])
 
+    repr_actives = np.zeros(parameters['num_years'])
+    seen_before_t_minus_1 = np.zeros(parameters['num_years'])
+    seen_t_minus_1 = np.zeros(parameters['num_years'])
+
     for i in range(1, parameters['num_years']):
-        age = parameters['start_age'] + i
+        ages[i] = ages[i-1] + 1
 
         alive[i] = sample_alive(
-            age=age,
+            age=ages[i],
             alive_year_before=alive[i-1],
             proba=parameters['alive_proba']
         )
 
-        repr_active = sample_repr_active(age=age, alive=alive[i])
+        repr_actives[i] = sample_repr_active(age=ages[i], alive=alive[i])
 
         birth_proba_generator = None
 
@@ -85,8 +95,8 @@ def model(parameters):
             )
 
             birth_proba_generator = HadBirthsBefore(
-                age=age,
-                repr_active=repr_active,
+                age=ages[i],
+                repr_active=repr_actives[i],
                 prior_constant=parameters['had_births_before_prior_yspb'],
                 prior_age=parameters['had_births_before_prior_age'],
                 yspb=yspb[i],
@@ -95,8 +105,8 @@ def model(parameters):
             )
         else:
             birth_proba_generator = HadNoBirthsYet(
-                age=age,
-                repr_active=repr_active,
+                age=ages[i],
+                repr_active=repr_actives[i],
                 prior_constant=parameters['had_no_births_yet_prior_constant'],
                 prior_age=parameters['had_no_births_yet_prior_age'],
             )
@@ -106,17 +116,33 @@ def model(parameters):
 
         had_a_birth_before[i] = births[i] or had_a_birth_before[i-1]
 
+        seen_t_minus_1[i] = int(observed_count[i-1] > 0)
+        seen_before_t_minus_1[i] = int(observed_count[:i].sum() > 0)
+
         observed_count[i] = sample_observed_count(
             alive_t=alive[i],
             birth_t=births[i],
-            seen_t_minus_1=int(observed_count[i-1] > 0),
-            seen_before_t_minus_1=int(observed_count[:i].sum() > 0),
+            seen_t_minus_1=seen_t_minus_1[i],
+            seen_before_t_minus_1=seen_before_t_minus_1[i],
             prior_seen_t_minus_1=parameters['observed_count_prior_seen_t_minus_1'],
             prior_seen_before_t_minus_1=parameters['observed_count_prior_seen_before_t_minus_1'],
             constant=parameters['observed_count_prior_constant']
         )
 
-    return observed_count
+    return {
+        'data': observed_count,
+        'debug': pd.DataFrame(
+            {
+                'observed_counts': observed_count,
+                'alive': alive,
+                'yspb': yspb,
+                'repr_actives': repr_actives,
+                'had_a_birth_before': had_a_birth_before,
+                'seen_t_minus_1': seen_t_minus_1,
+                'seen_before_t_minus_1': seen_before_t_minus_1
+            }
+        )
+    }
 
 
 def sample_repr_active(age, alive):
