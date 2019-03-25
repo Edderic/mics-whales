@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 
-def model(parameters):
+def model_quadratic_yspb(parameters, num_years=37):
     """
         Produces data for an individual.
 
@@ -13,7 +13,7 @@ def model(parameters):
 
             start_age: integer (pos/zero/neg). The age of the whale in the beginning.
 
-            start_alive: Was whale alive in the beginning?
+            proba_start_alive: Probability of whale being alive in the beginning.
 
             start_had_a_birth_before: Did the whale have a birth before the
                 time window of interest?
@@ -27,16 +27,15 @@ def model(parameters):
                 regression for proba_give_birth.
 
             had_births_before_prior_constant: intercept term for logistic
-                regression for HadBirthsBefore#proba_give_birth
+                regression for HadBirthsBeforeQuadratic#proba_give_birth
 
             had_births_before_prior_age: age coefficient for logistic
-                regression for HadBirthsBefore#proba_give_birth
+                regression for HadBirthsBeforeQuadratic#proba_give_birth
 
-            had_births_before_prior_yspb: coefficient for yspb in the logistic
-                regression for proba_give_birth.
+            had_births_before_prior_peak_yspb: The most likely YSPB value.
 
-            had_births_before_prior_yspb_squared: coefficient for yspb**2 in the
-                logistic regression for proba_give_birth.
+            had_births_before_prior_width: Determines the width of the parabola,
+                and whether the "bowl" is up or down.
 
             alive_proba: If whale was alive the year before, what's the probability
                 of being alive now?
@@ -53,27 +52,27 @@ def model(parameters):
 
 
     """
-    ages = np.zeros(parameters['num_years'])
+    ages = np.zeros(num_years)
     ages[0] = parameters['start_age']
 
-    alive = np.zeros(parameters['num_years'])
-    alive[0] = parameters['start_alive']
+    alive = np.zeros(num_years)
+    alive[0] = np.random.binomial(n=1, p=parameters['proba_start_alive'])
 
-    had_a_birth_before = np.zeros(parameters['num_years'])
-    had_a_birth_before[0] = parameters['start_had_a_birth_before']
+    had_a_birth_before = np.zeros(num_years)
+    had_a_birth_before[0] = np.random.binomial(n=1, p=parameters['proba_start_had_a_birth_before'])
 
-    births = np.zeros(parameters['num_years'])
+    births = np.zeros(num_years)
 
-    yspb = np.zeros(parameters['num_years'])
+    yspb = np.zeros(num_years)
     yspb[0] = parameters['start_yspb']
 
-    observed_count = np.zeros(parameters['num_years'])
+    observed_count = np.zeros(num_years)
 
-    repr_actives = np.zeros(parameters['num_years'])
-    seen_before_t_minus_1 = np.zeros(parameters['num_years'])
-    seen_t_minus_1 = np.zeros(parameters['num_years'])
+    repr_actives = np.zeros(num_years)
+    seen_before_t_minus_1 = np.zeros(num_years)
+    seen_t_minus_1 = np.zeros(num_years)
 
-    for i in range(1, parameters['num_years']):
+    for i in range(1, num_years):
         ages[i] = ages[i-1] + 1
 
         alive[i] = sample_alive(
@@ -87,21 +86,20 @@ def model(parameters):
         birth_proba_generator = None
 
         if had_a_birth_before[i-1] == 1:
-            # TODO: check validity
             yspb[i] = sample_yspb(
                 had_a_birth_prior_to_t_minus_1=int(had_a_birth_before[:i].sum() > 0),
                 birth_t_minus_1=births[i-1],
                 yspb_t_minus_1=yspb[i-1]
             )
 
-            birth_proba_generator = HadBirthsBefore(
+            birth_proba_generator = HadBirthsBeforeQuadratic(
                 age=ages[i],
                 repr_active=repr_actives[i],
-                prior_constant=parameters['had_births_before_prior_yspb'],
+                prior_constant=parameters['had_births_before_prior_constant'],
                 prior_age=parameters['had_births_before_prior_age'],
                 yspb=yspb[i],
-                prior_yspb=parameters['had_births_before_prior_yspb'],
-                prior_yspb_squared=parameters['had_births_before_prior_yspb_squared']
+                prior_peak_yspb=parameters['had_births_before_prior_peak_yspb'],
+                prior_width=parameters['had_births_before_prior_width']
             )
         else:
             birth_proba_generator = HadNoBirthsYet(
@@ -196,7 +194,7 @@ class HadNoBirthsYet:
         summation = self.age * self.prior_age + self.prior_constant
         return logistic(summation)
 
-class HadBirthsBefore:
+class HadBirthsBeforeQuadratic:
     """
         Class that calculates the probability of giving birth,
         specifically for whales that had given birth yet
@@ -212,9 +210,9 @@ class HadBirthsBefore:
 
             yspb: years since previous birth.
 
-            prior_yspb: coefficient for yspb in the logistic regression for proba_give_birth.
+            prior_peak_yspb: float. coefficient for yspb in the logistic regression for proba_give_birth.
 
-            prior_yspb_squared: coefficient for yspb**2 in the logistic regression for proba_give_birth.
+            prior_width: float. Influences how "wide" the parabola is, and whether or not it's upside down
 
     """
     def __init__(
@@ -224,17 +222,16 @@ class HadBirthsBefore:
             prior_constant,
             prior_age,
             yspb,
-            prior_yspb,
-            prior_yspb_squared
+            prior_peak_yspb,
+            prior_width
     ):
         self.age = age
         self.repr_active = repr_active
         self.prior_constant = prior_constant
         self.prior_age = prior_age
         self.yspb = yspb
-        self.prior_yspb = prior_yspb
-        self.prior_yspb_squared = prior_yspb_squared
-
+        self.prior_peak_yspb = prior_peak_yspb
+        self.prior_width = prior_width
 
     def proba_give_birth(self):
         """
@@ -244,8 +241,8 @@ class HadBirthsBefore:
             return 0
 
         summation = self.age * self.prior_age + \
-                self.prior_constant + self.yspb * self.prior_yspb + \
-                self.yspb ** 2 * self.prior_yspb_squared
+                self.prior_constant + \
+                self.prior_width * (self.yspb - self.prior_peak_yspb) ** 2
 
         return logistic(summation)
 
