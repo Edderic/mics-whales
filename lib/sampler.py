@@ -259,55 +259,37 @@ def logistic(val):
 def sample_observed_count(
         alive_t,
         birth_t,
-        seen_t_minus_1,
-        seen_before_t_minus_1,
-        prior_seen_t_minus_1,
-        prior_seen_before_t_minus_1,
+        seen_previously,
+        seen_previously_coeff,
         constant,
+        unknown=0,
+        unknown_coeff=0
 ):
     """
         Simulates the observed count.
 
         Parameters:
-            alive_t: boolean. Was whale alive at time t?
-            birth_t: boolean. Did whale give birth at time t?
+            alive: boolean. Was whale alive?
+            birth: boolean. Did whale give birth?
 
-            seen_t_minus_1: integer. What was the observed count
-                in the year prior
-
-            seen_before_t_minus_1: prior to the calculation of
+            seen_previously: prior to the calculation of
                 seen_t_minus_1, was the whale observed?
 
-            prior_seen_t_minus_1: The prior for the GLM
+            seen_previously_coeff: The prior for the GLM
 
             constant: The prior for the GLM in the case that whale was
                 not observed at all
 
         Returns: 0 (unobserved), 1 (observed, no birth), or
             2 (observed w/ birth)
-
-        Notes:
-
-            Three potential cases:
-
-            | wsb t-1 | obs t-1 | equation                                 |
-            |    0    |    0    | c
-            |    1    |    1    | c + obs(t-1)*prior('obs', t-1) + \
-                                     wo(t-1)*prior('wo', t-1)              |
-            |    1    |    0    | c + wo(t-1)*prior('wo', t-1)             |
-            |    0    |    1    | doesn't happen                           |
-
-            c: constant
-            obs(t-1): observed in t-1
-            wo(t-1): was observed in t-1
     """
 
     if alive_t == 0:
         return 0
 
     proba = logistic(
-        seen_t_minus_1 * prior_seen_t_minus_1 + \
-        seen_before_t_minus_1 * prior_seen_before_t_minus_1 + constant
+        seen_previously * seen_previously_coeff + \
+        unknown * unknown_coeff + constant
     )
 
     if np.random.binomial(n=1, p=proba) == 1:
@@ -420,9 +402,9 @@ def sample_seen_before_t(
 def proba_birth(
         repr_active,
         birth_last_year,
-        age,
-        age_coeff,
-        intercept
+        intercept,
+        unknown,
+        unknown_coeff=0,
 ):
     """
         Gives a probability of birth for some year of interest.
@@ -433,9 +415,9 @@ def proba_birth(
 
             birth_last_year: 0 or 1. Did whale give birth last year?
 
-            age: float. >= 0. What's the age this year of the whale?
+            unknown: float. >= 0. What's the age this year of the whale?
 
-            age_coeff: The effect of age on the probability of birth
+            unknown_coeff: The effect of the unobserved on giving birth
 
 
         Returns: float. A probability.
@@ -443,4 +425,101 @@ def proba_birth(
     if repr_active == 0 or birth_last_year == 1:
         return 0.0
 
-    return logistic(age_coeff * age + intercept)
+    return logistic(unknown_coeff * unknown + intercept)
+
+def model_simple(parameters, num_years=11):
+    """
+        Produces data for an individual.
+
+        parameters: a dictionary
+            num_years: positive integer. Number of years to produce data for
+
+            start_age: integer (pos/zero/neg). The age of the whale in the beginning.
+
+            proba_start_alive: Probability of whale being alive in the beginning.
+
+            proba_start_birth_year_before: Probability of whale having given birth
+                the year before the start year?
+
+            start_seen_previously: Was the whale observed the year before?
+
+            alive_proba: If whale was alive the year before, what's the probability
+                of being alive now?
+
+            unknown_birth_coeff: regression coefficient for unknown var to predict birth
+
+            birth_intercept: regression coeff for intercept on predicting birth
+
+            observed_count_seen_previously_coeff: The prior for the GLM
+
+            observed_count_constant: The prior for the GLM in the case that
+                whale was not observed at all
+
+        returns: a dictionary with 'data' attribute.
+            data: list.
+                The first item is the first year to be predicted. The length should equal
+                num_years.
+
+
+    """
+    ages = [parameters['start_age']]
+    alive = [np.random.binomial(n=1, p=parameters['proba_start_alive'])]
+    births = [np.random.binomial(n=1, p=parameters['proba_start_birth_year_before'])]
+    observed_count = [0] # placeholder
+    seen_previously = [parameters['start_seen_previously']]
+    repr_actives = [0] # placeholder
+
+    for i in range(1, num_years):
+        ages.append(ages[i-1] + 1)
+
+        alive.append(
+            sample_alive(
+                age=ages[i],
+                alive_year_before=alive[i-1],
+                proba=parameters['alive_proba']
+            )
+        )
+
+        repr_actives.append(
+            sample_repr_active(age=ages[i], alive=alive[i])
+        )
+
+        _proba_birth = proba_birth(
+            repr_active=repr_actives[i],
+            birth_last_year=births[i-1],
+            unknown=i,
+            unknown_coeff=parameters['unknown_birth_coeff'],
+            intercept=parameters['birth_intercept']
+        )
+
+        births[i] = np.random.binomial(
+            n=1,
+            p=_proba_birth
+        )
+
+        observed_count[i] = sample_observed_count(
+            alive_t=alive[i],
+            birth_t=births[i],
+            seen_previously=seen_previously[i-1],
+            seen_previously_coeff=parameters['observed_count_seen_previously_coeff'],
+            constant=parameters['observed_count_constant'],
+            unknown=0,
+            unknown_coeff=0
+        )
+
+        seen_previously.append(
+            int(seen_previously[i-1] or observed_count[i])
+        )
+
+    return {
+        'data': observed_count,
+        'debug': pd.DataFrame(
+            {
+                'observed_counts': observed_count,
+                'alive': alive,
+                'repr_actives': repr_actives,
+                'births': births,
+                'seen_previously': seen_previously,
+            }
+        )
+    }

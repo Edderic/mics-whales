@@ -9,8 +9,8 @@ with description('proba-birth') as self:
         self.keys_to_set_to = [
             'repr_active',
             'birth_last_year',
-            'age',
-            'age_coeff',
+            'unknown',
+            'unknown_coeff',
             'intercept'
         ]
 
