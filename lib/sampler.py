@@ -210,9 +210,11 @@ class HadBirthsBeforeQuadratic:
 
             yspb: years since previous birth.
 
-            prior_peak_yspb: float. coefficient for yspb in the logistic regression for proba_give_birth.
+            prior_peak_yspb: float. coefficient for yspb in the logistic regression
+                for proba_give_birth.
 
-            prior_width: float. Influences how "wide" the parabola is, and whether or not it's upside down
+            prior_width: float. Influences how "wide" the parabola is, and whether or
+                not it's upside down
 
     """
     def __init__(
@@ -414,3 +416,31 @@ def sample_seen_before_t(
         return 1
     else:
         return 0
+
+def proba_birth(
+        repr_active,
+        birth_last_year,
+        age,
+        age_coeff,
+        intercept
+):
+    """
+        Gives a probability of birth for some year of interest.
+
+        Parameters:
+
+            repr_active: 0 or 1. Is whale reproductively active?
+
+            birth_last_year: 0 or 1. Did whale give birth last year?
+
+            age: float. >= 0. What's the age this year of the whale?
+
+            age_coeff: The effect of age on the probability of birth
+
+
+        Returns: float. A probability.
+    """
+    if repr_active == 0 or birth_last_year == 1:
+        return 0.0
+
+    return logistic(age_coeff * age + intercept)
