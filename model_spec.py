@@ -1,30 +1,25 @@
 """ Integration tests for model """
 from mamba import description, context, it, before
-from lib.sampler import model_quadratic_yspb
+from lib.sampler import model_simple
 
-with description('model') as self:
+with description('model_simple') as self:
     with context('some values are set'):
         with before.each:
             self.num_years = 36
             self.test_params = {
-                'start_age': 1,
-                'proba_start_alive': 1,
-                'proba_start_had_a_birth_before': 0,
-                'start_yspb': 1,
-                'had_no_births_yet_prior_constant': 1,
-                'had_no_births_yet_prior_age': 1,
-                'had_births_before_prior_constant': 1,
-                'had_births_before_prior_age': 1,
-                'had_births_before_yspb': 2,
-                'had_births_before_prior_peak_yspb': 1,
-                'had_births_before_prior_width': 1,
-                'alive_proba': 0.95,
-                'observed_count_prior_seen_t_minus_1': 1,
-                'observed_count_prior_seen_before_t_minus_1': 1,
-                'observed_count_prior_constant': 1,
+                'age t-1': 1,
+                'proba_alive t-1': 1,
+                'proba_birth t-1': 0,
+                'proba_observed t-1': 1,
+                'seen_previously t-1': 1,
+                'alive_proba': 1,
+                'unknown_birth_coeff': 1,
+                'birth_intercept': 1,
+                'observed_count_seen_previously_coeff': 2,
+                'observed_count_constant': 1,
             }
 
-            self.subject = model_quadratic_yspb(self.test_params)['data']
+            self.subject = model_simple(self.test_params)['data']
 
         with it('should not have contiguous observed births'):
             for i in range(self.num_years - 2):

@@ -434,14 +434,19 @@ def model_simple(parameters, num_years=11):
         parameters: a dictionary
             num_years: positive integer. Number of years to produce data for
 
-            start_age: integer (pos/zero/neg). The age of the whale in the beginning.
+            age t-1: integer (pos/zero/neg). The age of the whale in the year previous to
+                the first year of predictables.
 
-            proba_start_alive: Probability of whale being alive in the beginning.
+            proba_alive t-1: Probability of whale being alive the year before the
+                predictables' first year.
 
-            proba_start_birth_year_before: Probability of whale having given birth
-                the year before the start year?
+            proba_birth t-1: Probability of whale having given birth
+                the year before the predictables' first year?
 
-            start_seen_previously: Was the whale observed the year before?
+            proba_observed t-1: Probability of having seen the whale
+                the year before the predictables' first year?
+
+            seen_previously t-1: Was the whale observed before?
 
             alive_proba: If whale was alive the year before, what's the probability
                 of being alive now?
@@ -462,14 +467,15 @@ def model_simple(parameters, num_years=11):
 
 
     """
-    ages = [parameters['start_age']]
-    alive = [np.random.binomial(n=1, p=parameters['proba_start_alive'])]
-    births = [np.random.binomial(n=1, p=parameters['proba_start_birth_year_before'])]
-    observed_count = [0] # placeholder
-    seen_previously = [parameters['start_seen_previously']]
+    # first item is for the previous year
+    ages = [parameters['age t-1']]
+    alive = [np.random.binomial(n=1, p=parameters['proba_alive t-1'])]
+    births = [np.random.binomial(n=1, p=parameters['proba_birth t-1'])]
+    observed_count = [np.random.binomial(n=1, p=parameters['proba_observed t-1'])]
+    seen_previously = [parameters['seen_previously t-1']]
     repr_actives = [0] # placeholder
 
-    for i in range(1, num_years):
+    for i in range(1, num_years+1):
         ages.append(ages[i-1] + 1)
 
         alive.append(
@@ -492,34 +498,41 @@ def model_simple(parameters, num_years=11):
             intercept=parameters['birth_intercept']
         )
 
-        births[i] = np.random.binomial(
-            n=1,
-            p=_proba_birth
+        births.append(
+            np.random.binomial(
+                n=1,
+                p=_proba_birth
+            )
         )
 
-        observed_count[i] = sample_observed_count(
-            alive_t=alive[i],
-            birth_t=births[i],
-            seen_previously=seen_previously[i-1],
-            seen_previously_coeff=parameters['observed_count_seen_previously_coeff'],
-            constant=parameters['observed_count_constant'],
-            unknown=0,
-            unknown_coeff=0
+        observed_count.append(
+            sample_observed_count(
+                alive_t=alive[i],
+                birth_t=births[i],
+                seen_previously=seen_previously[i-1],
+                seen_previously_coeff=parameters['observed_count_seen_previously_coeff'],
+                constant=parameters['observed_count_constant'],
+                unknown=0,
+                unknown_coeff=0
+            )
         )
 
         seen_previously.append(
-            int(seen_previously[i-1] or observed_count[i])
+            int(
+                (seen_previously[i-1] == 1) or
+                (observed_count[i] == 1)
+            )
         )
 
     return {
-        'data': observed_count,
+        'data': np.array(observed_count[1:]),
         'debug': pd.DataFrame(
             {
-                'observed_counts': observed_count,
-                'alive': alive,
-                'repr_actives': repr_actives,
-                'births': births,
-                'seen_previously': seen_previously,
+                'observed_counts_w_t-1': observed_count,
+                'alive_w_t-1': alive,
+                'repr_actives_w_t-1': repr_actives,
+                'births_w_t-1': births,
+                'seen_previously_w_t-1': seen_previously,
             }
         )
     }
