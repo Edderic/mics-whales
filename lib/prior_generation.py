@@ -103,3 +103,27 @@ def proba_observed_year_prior(row, year):
         return RV('beta', 1, 100)
     else:
         return RV('beta', 100, 1)
+
+def seen_previously_year_prior(row, year):
+    """
+        Probability of having observed the whale for a certain year and the
+        years previous to that.
+
+        Parameters:
+            row: pd.Series
+                the row that represents data for one female.
+
+            year: integer
+                The year whose observation we're interested in.
+
+        Returns: RV.
+    """
+
+    earliest_year = int(row.index[0])
+    years = [str(i) for i in range(earliest_year, int(year))]
+
+    if row.loc[years].sum() == 0:
+        return RV('beta', 1, 100)
+    else:
+        return RV('beta', 100, 1)
+
