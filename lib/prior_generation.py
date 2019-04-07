@@ -9,6 +9,9 @@ from pyabc import RV
 BIRTH_EVENT = 2
 MOM_ONLY_EVENT = 1
 
+# TODO: might be better to just make this into an age_prior, to be consistent
+# with other methods?
+
 def min_age_prior(row, year):
     """
         Get the minimum possible age of the whale relative to the given year.
@@ -36,6 +39,15 @@ def proba_alive_year_prior(row, year):
     """
         Probability of being alive for a certain year, taking into account
         whether the whale was sighted later on.
+
+        Parameters:
+            row: pd.Series
+                the row that represents data for one female.
+
+            year: integer
+                The year we'd like to know the minimum age of the whale
+
+        Returns: RV.
     """
     final_year = int(row.index[-1])
     years = [str(i) for i in range(year, final_year + 1)]
@@ -48,6 +60,15 @@ def proba_alive_year_prior(row, year):
 def proba_birth_year_prior(row, year):
     """
         Probability of having given birth for a certain year.
+
+        Parameters:
+            row: pd.Series
+                the row that represents data for one female.
+
+            year: integer
+                The year we'd like to know the probability of birth.
+
+        Returns: RV.
     """
 
     prev_year = year - 1
@@ -64,3 +85,21 @@ def proba_birth_year_prior(row, year):
     else:
         return RV('uniform', 0, 1)
 
+def proba_observed_year_prior(row, year):
+    """
+        Probability of having observed the whale for a certain year.
+
+        Parameters:
+            row: pd.Series
+                the row that represents data for one female.
+
+            year: integer
+                The year whose observation we're interested in.
+
+        Returns: RV.
+    """
+
+    if row.loc[str(year)] == 0:
+        return RV('beta', 1, 100)
+    else:
+        return RV('beta', 100, 1)
