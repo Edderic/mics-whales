@@ -262,8 +262,6 @@ def sample_observed_count(
         seen_previously,
         seen_previously_coeff,
         constant,
-        unknown=0,
-        unknown_coeff=0
 ):
     """
         Simulates the observed count.
@@ -288,8 +286,7 @@ def sample_observed_count(
         return 0
 
     proba = logistic(
-        seen_previously * seen_previously_coeff + \
-        unknown * unknown_coeff + constant
+        seen_previously * seen_previously_coeff + constant
     )
 
     if np.random.binomial(n=1, p=proba) == 1:
@@ -512,8 +509,6 @@ def model_simple(parameters, num_years=11):
                 seen_previously=seen_previously[i-1],
                 seen_previously_coeff=parameters['observed_count_seen_previously_coeff'],
                 constant=parameters['observed_count_constant'],
-                unknown=0,
-                unknown_coeff=0
             )
         )
 
@@ -536,3 +531,4 @@ def model_simple(parameters, num_years=11):
             }
         )
     }
+

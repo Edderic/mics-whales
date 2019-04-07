@@ -15,8 +15,6 @@ with description('sample_observed_count') as self:
             'seen_previously',
             'seen_previously_coeff',
             'constant',
-            'unknown',
-            'unknown_coeff'
         ]
 
         set_to_value_except(
