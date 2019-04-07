@@ -6,6 +6,9 @@
 import numpy as np
 from pyabc import RV
 
+BIRTH_EVENT = 2
+MOM_ONLY_EVENT = 1
+
 def min_age_prior(row, year):
     """
         Get the minimum possible age of the whale relative to the given year.
@@ -41,3 +44,23 @@ def proba_alive_year_prior(row, year):
         return RV('uniform', 0, 1)
     else:
         return RV('beta', 100, 1)
+
+def proba_birth_year_prior(row, year):
+    """
+        Probability of having given birth for a certain year.
+    """
+
+    prev_year = year - 1
+    next_year = year + 1
+
+    if row.loc[str(year)] == BIRTH_EVENT:
+        return RV('beta', 100, 1)
+    elif row.loc[str(year)] == MOM_ONLY_EVENT:
+        return RV('beta', 1, 100)
+    elif row.loc[str(prev_year)] == BIRTH_EVENT:
+        return RV('beta', 1, 100)
+    elif row.loc[str(next_year)] == BIRTH_EVENT:
+        return RV('beta', 1, 100)
+    else:
+        return RV('uniform', 0, 1)
+
