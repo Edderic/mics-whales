@@ -32,6 +32,5 @@ with description('age_prior') as self:
 
                 with it('should give a uniform prior between 0 and 80 '):
                     self.rv = age_prior(**self.args)
-                    import pdb; pdb.set_trace()
                     assert self.rv.mean() == 40
-                    # assert isclose(self.rv.var(), 0.083, abs_tol=0.01)
+                    assert isclose(self.rv.var(), 533.33, abs_tol=0.01)
