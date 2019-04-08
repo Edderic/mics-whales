@@ -259,9 +259,7 @@ def logistic(val):
 def sample_observed_count(
         alive_t,
         birth_t,
-        seen_previously,
-        seen_previously_coeff,
-        constant,
+        proba_observed_given_alive,
 ):
     """
         Simulates the observed count.
@@ -270,13 +268,8 @@ def sample_observed_count(
             alive: boolean. Was whale alive?
             birth: boolean. Did whale give birth?
 
-            seen_previously: prior to the calculation of
-                seen_t_minus_1, was the whale observed?
-
-            seen_previously_coeff: The prior for the GLM
-
-            constant: The prior for the GLM in the case that whale was
-                not observed at all
+            proba_observed_given_alive: The prior for the GLM in the case that whale
+                is alive
 
         Returns: 0 (unobserved), 1 (observed, no birth), or
             2 (observed w/ birth)
@@ -285,11 +278,7 @@ def sample_observed_count(
     if alive_t == 0:
         return 0
 
-    proba = logistic(
-        seen_previously * seen_previously_coeff + constant
-    )
-
-    if np.random.binomial(n=1, p=proba) == 1:
+    if np.random.binomial(n=1, p=proba_observed_given_alive) == 1:
         return alive_t + birth_t
     else:
         return 0
@@ -443,8 +432,6 @@ def model_simple(parameters, num_years=11):
             proba_observed t-1: Probability of having seen the whale
                 the year before the predictables' first year?
 
-            seen_previously t-1: Was the whale observed before?
-
             alive_proba: If whale was alive the year before, what's the probability
                 of being alive now?
 
@@ -452,10 +439,8 @@ def model_simple(parameters, num_years=11):
 
             birth_intercept: regression coeff for intercept on predicting birth
 
-            observed_count_seen_previously_coeff: The prior for the GLM
-
-            observed_count_constant: The prior for the GLM in the case that
-                whale was not observed at all
+            proba_observed_given_alive: The prior for the GLM in the case that
+                whale is alive.
 
         returns: a dictionary with 'data' attribute.
             data: list.
@@ -469,7 +454,6 @@ def model_simple(parameters, num_years=11):
     alive = [np.random.binomial(n=1, p=parameters['proba_alive t-1'])]
     births = [np.random.binomial(n=1, p=parameters['proba_birth t-1'])]
     observed_count = [np.random.binomial(n=1, p=parameters['proba_observed t-1'])]
-    seen_previously = [parameters['seen_previously t-1']]
     repr_actives = [0] # placeholder
 
     for i in range(1, num_years+1):
@@ -506,16 +490,7 @@ def model_simple(parameters, num_years=11):
             sample_observed_count(
                 alive_t=alive[i],
                 birth_t=births[i],
-                seen_previously=seen_previously[i-1],
-                seen_previously_coeff=parameters['observed_count_seen_previously_coeff'],
-                constant=parameters['observed_count_constant'],
-            )
-        )
-
-        seen_previously.append(
-            int(
-                (seen_previously[i-1] == 1) or
-                (observed_count[i] == 1)
+                proba_observed_given_alive=parameters['proba_observed_given_alive'],
             )
         )
 
@@ -527,7 +502,6 @@ def model_simple(parameters, num_years=11):
                 'alive_w_t-1': alive,
                 'repr_actives_w_t-1': repr_actives,
                 'births_w_t-1': births,
-                'seen_previously_w_t-1': seen_previously,
             }
         )
     }
