@@ -12,9 +12,7 @@ with description('sample_observed_count') as self:
         self.keys_to_set_to = [
             'alive_t',
             'birth_t',
-            'seen_previously',
-            'seen_previously_coeff',
-            'constant',
+            'proba_observed_given_alive',
         ]
 
         set_to_value_except(
@@ -37,32 +35,24 @@ with description('sample_observed_count') as self:
         with before.each:
             self.args['alive_t'] = 1
 
-        with context('when whale was not observed previously'):
+        with context('and proba_observed_given_alive is zero'):
             with before.each:
-                self.args['seen_previously'] = 0
+                self.args['proba_observed_given_alive'] = 0
+                self.sample = sample_observed_count(**self.args)
 
-            with context('and constant is very negative'):
+            with it('will be 0'):
+                assert self.sample == 0
+
+        with context('and proba_observed_given_alive is 1'):
+            with before.each:
+                self.args['proba_observed_given_alive'] = 1
+
+            with context('and there was a birth'):
                 with before.each:
-                    self.args['constant'] = -15
+                    self.args['birth_t'] = 1
+
+                with it('should return 2'):
                     self.sample = sample_observed_count(**self.args)
 
-                with it('should most likely give 0'):
-                    assert self.sample == 0
-
-        with context('when whale was observed previously'):
-            with before.each:
-                self.args['seen_previously'] = 1
-
-            with context('and the coefficient for that var is strong'):
-                with before.each:
-                    self.args['seen_previously_coeff'] = 100
-
-                with context('and there was a birth'):
-                    with before.each:
-                        self.args['birth_t'] = 1
-
-                    with it('should return 2'):
-                        self.sample = sample_observed_count(**self.args)
-
-                        assert self.sample == 2
+                    assert self.sample == 2
 
