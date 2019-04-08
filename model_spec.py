@@ -11,12 +11,10 @@ with description('model_simple') as self:
                 'proba_alive t-1': 1,
                 'proba_birth t-1': 0,
                 'proba_observed t-1': 1,
-                'seen_previously t-1': 1,
                 'alive_proba': 1,
                 'unknown_birth_coeff': 1,
                 'birth_intercept': 1,
-                'observed_count_seen_previously_coeff': 2,
-                'observed_count_constant': 1,
+                'proba_observed_given_alive': 1
             }
 
             self.subject = model_simple(self.test_params)['data']
