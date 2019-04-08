@@ -37,5 +37,5 @@ with description('seen_previously_prior') as self:
 
                 with it('should return a strong prior saying yes'):
                     self.rv = seen_previously_prior(**self.args)
-                    assert self.rv.mean() < 0.01
+                    assert self.rv.mean() > 0.99
                     assert self.rv.var() < 0.02
