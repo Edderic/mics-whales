@@ -4,50 +4,20 @@ from mamba import description, context, it, before
 from lib.sampler import sample_yspb
 
 with description('sample_yspb') as self:
-    with context('when the whale has not had any births yet in previous years at all'):
+    with context('when the whale just gave birth'):
         with before.each:
             self.args = {}
-            self.args['had_a_birth_prior_to_t_minus_1'] = 0
-            self.args['birth_t_minus_1'] = 0
-            self.args['yspb_t_minus_1'] = 8 # this value is discarded
+            self.args['birth'] = 1
+            self.args['yspb_year_before'] = 2
 
-        with it('should raise an error'):
-            try:
-                sample_yspb(**self.args)
-                assert False
-            except ValueError as err:
-                self.message = "sample_yspb only makes sense when there's been a birth before."
-                assert err.args[0] == self.message
+        with it('should give 0'):
+            assert sample_yspb(**self.args) == 0
 
-    with context('when the whale gave birth for the first time last year'):
+    with context('when the whale did not give birth'):
         with before.each:
             self.args = {}
-            self.args['had_a_birth_prior_to_t_minus_1'] = 0
-            self.args['birth_t_minus_1'] = 1
-            self.args['yspb_t_minus_1'] = 8 # this value is discarded
+            self.args['birth'] = 0
+            self.args['yspb_year_before'] = 2
 
-        with it('should return 1'):
-            self.subject = sample_yspb(**self.args)
-            assert self.subject == 1
-
-    with context('when the whale had given birth previously before last year'):
-        with before.each:
-            self.args = {}
-            self.args['had_a_birth_prior_to_t_minus_1'] = 1
-            self.args['yspb_t_minus_1'] = 8 # this value is used
-
-        with context('and no birth last year'):
-            with before.each:
-                self.args['birth_t_minus_1'] = 0
-
-            with it('should increment yspb_t_minus_1'):
-                self.subject = sample_yspb(**self.args)
-                assert self.subject == (self.args['yspb_t_minus_1'] + 1)
-
-        with context('and a birth last year'):
-            with before.each:
-                self.args['birth_t_minus_1'] = 1
-
-            with it('should return 1'):
-                self.subject = sample_yspb(**self.args)
-                assert self.subject == 1
+        with it('should increase the yspb from the year before'):
+            assert sample_yspb(**self.args) == 3
