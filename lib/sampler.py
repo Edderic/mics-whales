@@ -53,7 +53,7 @@ def model_quadratic_yspb(parameters, num_years=11):
     yspb = [parameters['yspb t-1']]
     observed = [np.random.binomial(n=1, p=parameters['proba_observed t-1'])]
     repr_actives = [sample_repr_active(age=ages[0], alive=alive[0])]
-    had_a_birth_before = [np.random.binomial(n=1, p=parameters['had_a_birth_before'])]
+    had_a_birth_before = [np.random.binomial(n=1, p=parameters['proba_had_a_birth_before'])]
 
     for i in range(1, num_years):
         ages.append(ages[i-1] + 1)
@@ -68,26 +68,33 @@ def model_quadratic_yspb(parameters, num_years=11):
 
         repr_actives.append(sample_repr_active(age=ages[i], alive=alive[i]))
 
-        proba_give_birth = logistic(
-            had_a_birth_before[i-1] * parameters['birth_width'] \
-                    * (yspb[i] - parameters['birth_peak_yspb']) ** 2
-            + i * parameters['birth_unknown'] + parameters['birth_intercept']
+        proba_give_birth = proba_birth_quadratic_yspb(
+            birth_last_year=births[i-1],
+            birth_unknown=parameters['birth_unknown'],
+            birth_intercept=parameters['birth_intercept'],
+            birth_width=parameters['birth_width'],
+            birth_peak_yspb=parameters['birth_peak_yspb'],
+            unknown_value=i,
+            yspb_year_before=yspb[i-1],
+            had_a_birth_before=had_a_birth_before[i-1]
         )
 
-        births[i] = np.random.binomial(n=1, p=proba_give_birth)
+        births.append(np.random.binomial(n=1, p=proba_give_birth))
 
         yspb.append(sample_yspb(birth=births[i], yspb_year_before=yspb[i-1]))
 
         had_a_birth_before.append(int(had_a_birth_before[i-1] == 1 or births[i] == 1))
 
-        observed[i] = sample_observed_count(
-            alive_t=alive[i],
-            birth_t=births[i],
-            proba_observed_given_alive=parameters['proba_observed_given_alive']
+        observed.append(
+            sample_observed_count(
+                alive_t=alive[i],
+                birth_t=births[i],
+                proba_observed_given_alive=parameters['proba_observed_given_alive']
+            )
         )
 
     return {
-        'data': observed[1:],
+        'data': np.array(observed[1:]),
         'debug': pd.DataFrame(
             {
                 'observed_counts': observed,
@@ -100,6 +107,28 @@ def model_quadratic_yspb(parameters, num_years=11):
     }
 
 
+def proba_birth_quadratic_yspb(
+        birth_last_year,
+        birth_unknown,
+        birth_intercept,
+        birth_width,
+        birth_peak_yspb,
+        unknown_value,
+        yspb_year_before,
+        had_a_birth_before
+):
+    """
+        Gives the probability of birth, taking into account Years Since
+        Previous Birth (YSPB), and assuming a quadratic relationship.
+    """
+    if birth_last_year:
+        return 0
+
+    return logistic(
+        had_a_birth_before * birth_width \
+                * (yspb_year_before - birth_peak_yspb) ** 2
+        + unknown_value * birth_unknown + birth_intercept
+    )
 def sample_repr_active(age, alive):
     """
         Samples reproductively activeness
@@ -367,4 +396,3 @@ def model_simple(parameters, num_years=11):
             }
         )
     }
-
