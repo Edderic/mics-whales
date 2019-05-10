@@ -158,8 +158,6 @@ def seen_previously_prior(row, year):
 def generate_priors_for_individual(row, start_year, known):
     """
     """
-    row.index[row.index]
-    # known =
     year_before_start_year = start_year - 1
 
     # notes:
