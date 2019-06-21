@@ -12,3 +12,4 @@ dependencies:
   - matplotlib=3.0.3
   - pymc3=3.6
   - theano=1.0.4
+  - mkl=2019.4
