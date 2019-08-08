@@ -4,12 +4,10 @@
 """
 
 import numpy as np
-from pyabc import RV
 
 BIRTH_EVENT = 2
 MOM_ONLY_EVENT = 1
 UNOBSERVED_EVENT = 0
-REPRO_AGE = 9
 MAX_AGE = 80 # years
 
 # TODO: might be better to just make this into an age_prior, to be consistent
@@ -33,23 +31,8 @@ def min_age_prior(row, year):
         raise RuntimeError('Please make sure that the row has at least one ' + \
                 'sighting (i.e. value of 1 or 2)')
     sightings = np.where(row >= MOM_ONLY_EVENT)[0]
-    birth_sightings = np.where(row == BIRTH_EVENT)[0]
+
     first_sighting_year = int(row.index[sightings[0]])
-
-    if len(birth_sightings) > 0:
-        first_birth_sighting_year = int(row.index[birth_sightings.min()])
-
-        return max([
-            year - first_sighting_year,
-            year - first_birth_sighting_year + REPRO_AGE]
-        )
-
-    else:
-        return year - first_sighting_year
-
-
-
-
 
     return year - first_sighting_year
 
